@@ -336,6 +336,7 @@ function handleTrackEvent(event) {
   } else {
     console.log('视频接收')
     toVideo.srcObject = event.streams[0];
+    iframeVideo.srcObject = event.streams[0];
   }
   
   document.getElementById("hangup-button").disabled = false;
@@ -857,4 +858,15 @@ function reportError(errMessage) {
 
 function handleTran() {
 
+}
+
+
+
+var iframeDom = document.getElementById('myIframe');
+var iframeVideo;
+
+iframeDom.onload = function () {
+  var data = 'hello, child!';
+  iframeVideo = iframeDom.contentWindow.getVideo();
+  console.log(data, iframeVideo);
 }

@@ -125,18 +125,20 @@
 }
 
 .video-box {
-  display: flex;
-  justify-content: space-between
 }
 
 #fromVideo, #toVideo {
-  width: 650px;
+  width: 400px;
 }
 
 #fromVideo {
-  margin-right: 20px
 }
 
 .btn {
   margin-top: 10px
+}
+
+.iframe-wrapper {
+  margin-left: 270px;
+  display: flex;
 }

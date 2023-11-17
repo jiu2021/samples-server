@@ -20,7 +20,7 @@
   <title>WebSocket Chat Demo with WebRTC Calling</title>
   <meta charset="utf-8">
   <link href="chat.css" rel="stylesheet">
-  
+  <script src="https://aframe.io/releases/1.4.0/aframe.js"></script>
   <script src="adapter.js"></script>
 </head>
 <body>
@@ -50,15 +50,23 @@
       <input id="text" type="text" name="text" size="100" maxlength="256" placeholder="Say something meaningful..." autocomplete="off" onkeyup="handleKey(event)" disabled>
       <input type="button" id="send" name="send" value="Send" onclick="handleSendButton()" disabled>
     </div>
-    <div>
-      <div class="video-box">
-          <video id="fromVideo" controls crossorigin="anonymous" muted>
-            <source src="video1.mp4" type="video/mp4">
-          </video>
-          <video id="toVideo" autoplay>
-            <source src="" type="">
-          </video>
-      </div>
+    <div class="video-box">
+      <video id="fromVideo" controls crossorigin="anonymous" muted>
+        <source src="video1.mp4" type="video/mp4">
+      </video>
+      <video id="toVideo" autoplay>
+        <source src="" type="">
+      </video>
+    </div>
+    <div class="iframe-wrapper">
+      <iframe
+        id="myIframe"
+        title="myIframe"
+        src="iframe/video.html"
+        onload="adjustIframe();"
+        width="800px"
+        >
+      </iframe>
     </div>
   </div>
   <script type="text/javascript" src="chatclient.js"></script>
