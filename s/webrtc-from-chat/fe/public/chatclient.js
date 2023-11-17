@@ -609,22 +609,6 @@ async function startTran(evt) {
     // Get access to the webcam stream and attach it to the
     // "preview" box (id "local_video").
 
-
-    // let stream;
-    // srcVideo.addEventListener('canplay', () => {
-    //   console.log('canplay')
-    //   const fps = 0; // 设置为0，则会捕获单个帧。
-    //   if (srcVideo.captureStream) {
-    //     stream = srcVideo.captureStream(fps);
-    //   } else if (srcVideo.mozCaptureStream) {
-    //     stream = srcVideo.mozCaptureStream(fps);
-    //   } else {
-    //     console.error('rustfisher.com: 不支持captureStream方法！');
-    //     stream = null;
-    //   }
-    //   // toVideo.srcObject = stream;
-    // });
-
     // Add the tracks from the stream to the RTCPeerConnection
 
     try {
@@ -747,7 +731,7 @@ async function handleTranOfferMsg(msg) {
   if (!stream) {
     srcVideo.addEventListener('canplay', () => {
       console.log('canplay')
-      const fps = 0; // 设置为0，则会捕获单个帧。
+      const fps = 60; // 设置为0，则会捕获单个帧。
       if (srcVideo.captureStream) {
         stream = srcVideo.captureStream(fps);
       } else if (srcVideo.mozCaptureStream) {
