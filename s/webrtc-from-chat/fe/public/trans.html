@@ -20,8 +20,7 @@
   <title>WebSocket Chat Demo with WebRTC Calling</title>
   <meta charset="utf-8">
   <link href="chat.css" rel="stylesheet">
-  <link href="../shared.css" rel="stylesheet">
-  <script type="text/javascript" src="chatclient.js"></script>
+  
   <script src="adapter.js"></script>
 </head>
 <body>
@@ -51,6 +50,21 @@
       <input id="text" type="text" name="text" size="100" maxlength="256" placeholder="Say something meaningful..." autocomplete="off" onkeyup="handleKey(event)" disabled>
       <input type="button" id="send" name="send" value="Send" onclick="handleSendButton()" disabled>
     </div>
+    <div>
+      <div class="video-box">
+          <video id="fromVideo" controls crossorigin="anonymous" muted>
+            <source src="video1.mp4" type="video/mp4">
+          </video>
+          <video id="toVideo" controls crossorigin="anonymous" muted>
+            <source src="" type="">
+          </video>
+      </div>
+
+      <button class="btn" onclick="handleTran()" role="button">
+        传输视频
+      </button>
+    </div>
   </div>
+  <script type="text/javascript" src="chatclient.js"></script>
 </body>
 </html>

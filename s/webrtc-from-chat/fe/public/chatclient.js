@@ -14,7 +14,7 @@
 // Get our hostname
 
 var myHostname = window.location.hostname;
-myHostname = '192.168.1.100'
+// myHostname = '192.168.1.100' //跨设备局域网中使用，应为信令服务器所在ip，本机测试时可忽略
 if (!myHostname) {
   myHostname = "localhost";
 }
@@ -51,7 +51,25 @@ var myUsername = null;
 var targetUsername = null;      // To store username of other peer
 var myPeerConnection = null;    // RTCPeerConnection
 var transceiver = null;         // RTCRtpTransceiver
-var webcamStream = null;        // MediaStream from webcam
+var webcamStream = null;        // MediaStream from webca
+var isCall = true;               // 全局标志用来判断是否是视频通话还是传输视频
+var srcVideo = document.querySelector('#fromVideo');
+var toVideo = document.querySelector('#toVideo');
+
+var stream;
+srcVideo.addEventListener('canplay', () => {
+  console.log('canplay')
+  const fps = 0; // 设置为0，则会捕获单个帧。
+  if (srcVideo.captureStream) {
+    stream = srcVideo.captureStream(fps);
+  } else if (srcVideo.mozCaptureStream) {
+    stream = srcVideo.mozCaptureStream(fps);
+  } else {
+    console.error('rustfisher.com: 不支持captureStream方法！');
+    stream = null;
+  }
+  // toVideo.srcObject = stream;
+});
 
 // Output logging information to console.
 
@@ -160,9 +178,17 @@ function connect() {
       case "video-offer":  // Invitation and offer to chat
         handleVideoOfferMsg(msg);
         break;
+      
+      case "tran-offer":  // Invitation and offer to chat
+        handleTranOfferMsg(msg);
+        break;
 
       case "video-answer":  // Callee has answered our offer
         handleVideoAnswerMsg(msg);
+        break;
+      
+      case "tran-answer":  // Callee has answered our offer
+        handleTranAnswerMsg(msg);
         break;
 
       case "new-ice-candidate": // A new ICE candidate has been received
@@ -274,12 +300,14 @@ async function handleNegotiationNeededEvent() {
     // Send the offer to the remote peer.
 
     log("---> Sending the offer to the remote peer");
+    
     sendToServer({
       name: myUsername,
       target: targetUsername,
-      type: "video-offer",
+      type: isCall === true ? "video-offer" : "tran-offer",
       sdp: myPeerConnection.localDescription
     });
+    console.log(isCall === true ? "video-offer" : "tran-offer")
   } catch(err) {
     log("*** The following error occurred while handling the negotiationneeded event:");
     reportError(err);
@@ -302,7 +330,14 @@ async function handleNegotiationNeededEvent() {
 
 function handleTrackEvent(event) {
   log("*** Track event");
-  document.getElementById("received_video").srcObject = event.streams[0];
+  if (isCall) {
+    console.log('通话接收')
+    document.getElementById("received_video").srcObject = event.streams[0];
+  } else {
+    console.log('视频接收')
+    toVideo.srcObject = event.streams[0];
+  }
+  
   document.getElementById("hangup-button").disabled = false;
 }
 
@@ -390,10 +425,21 @@ function handleUserlistMsg(msg) {
   msg.users.forEach(function(username) {
     var item = document.createElement("li");
     item.appendChild(document.createTextNode(username));
-    item.addEventListener("click", invite, false);
-
+    item.addEventListener("click", handleClickUser, false);
+    
     listElem.appendChild(item);
   });
+}
+
+// trans or phone
+function handleClickUser(evt) {
+  const res = confirm("通话选确认，传输视频选取消");
+  isCall = res;
+  if (isCall) {
+    invite(evt)
+  } else {
+    startTran(evt)
+  }
 }
 
 // Close the RTCPeerConnection and reset variables so that the user can
@@ -532,6 +578,64 @@ async function invite(evt) {
   }
 }
 
+async function startTran(evt) {
+  log("Starting to prepare an invitation");
+  if (myPeerConnection) {
+    alert("You can't start a call because you already have one open!");
+  } else {
+    var clickedUsername = evt.target.textContent;
+
+    // Don't allow users to call themselves, because weird.
+
+    if (clickedUsername === myUsername) {
+      alert("I'm afraid I can't let you talk to yourself. That would be weird.");
+      return;
+    }
+
+    // Record the username being called for future reference
+
+    targetUsername = clickedUsername;
+    log("Inviting user " + targetUsername);
+
+    // Call createPeerConnection() to create the RTCPeerConnection.
+    // When this returns, myPeerConnection is our RTCPeerConnection
+    // and webcamStream is a stream coming from the camera. They are
+    // not linked together in any way yet.
+
+    log("Setting up connection to invite user: " + targetUsername);
+    createPeerConnection();
+
+    // Get access to the webcam stream and attach it to the
+    // "preview" box (id "local_video").
+
+
+    // let stream;
+    // srcVideo.addEventListener('canplay', () => {
+    //   console.log('canplay')
+    //   const fps = 0; // 设置为0，则会捕获单个帧。
+    //   if (srcVideo.captureStream) {
+    //     stream = srcVideo.captureStream(fps);
+    //   } else if (srcVideo.mozCaptureStream) {
+    //     stream = srcVideo.mozCaptureStream(fps);
+    //   } else {
+    //     console.error('rustfisher.com: 不支持captureStream方法！');
+    //     stream = null;
+    //   }
+    //   // toVideo.srcObject = stream;
+    // });
+
+    // Add the tracks from the stream to the RTCPeerConnection
+
+    try {
+      stream.getTracks().forEach(
+        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
+      );
+    } catch(err) {
+      handleGetUserMediaError(err);
+    }
+  }
+}
+
 // Accept an offer to video chat. We configure our local settings,
 // create our RTCPeerConnection, get and attach our local camera
 // stream, then create and send an answer to the caller.
@@ -604,10 +708,92 @@ async function handleVideoOfferMsg(msg) {
   });
 }
 
+async function handleTranOfferMsg(msg) {
+  isCall = false;
+  targetUsername = msg.name;
+
+  // If we're not already connected, create an RTCPeerConnection
+  // to be linked to the caller.
+
+  log("Received video chat offer from " + targetUsername);
+  if (!myPeerConnection) {
+    createPeerConnection();
+  }
+
+  // We need to set the remote description to the received SDP offer
+  // so that our local WebRTC layer knows how to talk to the caller.
+
+  var desc = new RTCSessionDescription(msg.sdp);
+
+  // If the connection isn't stable yet, wait for it...
+
+  if (myPeerConnection.signalingState != "stable") {
+    log("  - But the signaling state isn't stable, so triggering rollback");
+
+    // Set the local and remove descriptions for rollback; don't proceed
+    // until both return.
+    await Promise.all([
+      myPeerConnection.setLocalDescription({type: "rollback"}),
+      myPeerConnection.setRemoteDescription(desc)
+    ]);
+    return;
+  } else {
+    log ("  - Setting remote description");
+    await myPeerConnection.setRemoteDescription(desc);
+  }
+
+  // Get the webcam stream if we don't already have it
+  if (!stream) {
+    srcVideo.addEventListener('canplay', () => {
+      console.log('canplay')
+      const fps = 0; // 设置为0，则会捕获单个帧。
+      if (srcVideo.captureStream) {
+        stream = srcVideo.captureStream(fps);
+      } else if (srcVideo.mozCaptureStream) {
+        stream = srcVideo.mozCaptureStream(fps);
+      } else {
+        console.error('rustfisher.com: 不支持captureStream方法！');
+        stream = null;
+      }
+      // toVideo.srcObject = stream;
+    });
+
+    try {
+      stream.getTracks().forEach(
+        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
+      );
+    } catch(err) {
+      handleGetUserMediaError(err);
+    }
+  }
+
+  log("---> Creating and sending answer to caller");
+
+  await myPeerConnection.setLocalDescription(await myPeerConnection.createAnswer());
+
+  sendToServer({
+    name: myUsername,
+    target: targetUsername,
+    type: "tran-answer",
+    sdp: myPeerConnection.localDescription
+  });
+}
+
 // Responds to the "video-answer" message sent to the caller
 // once the callee has decided to accept our request to talk.
 
 async function handleVideoAnswerMsg(msg) {
+  log("*** Call recipient has accepted our call");
+
+  // Configure the remote description, which is the SDP payload
+  // in our "video-answer" message.
+
+  var desc = new RTCSessionDescription(msg.sdp);
+  await myPeerConnection.setRemoteDescription(desc).catch(reportError);
+}
+
+async function handleTranAnswerMsg(msg) {
+  isCall = false
   log("*** Call recipient has accepted our call");
 
   // Configure the remote description, which is the SDP payload
@@ -667,4 +853,8 @@ function handleGetUserMediaError(e) {
 
 function reportError(errMessage) {
   log_error(`Error ${errMessage.name}: ${errMessage.message}`);
+}
+
+function handleTran() {
+
 }

@@ -123,3 +123,20 @@
   width: 100%;
   height: 100%;
 }
+
+.video-box {
+  display: flex;
+  justify-content: space-between
+}
+
+#fromVideo, #toVideo {
+  width: 650px;
+}
+
+#fromVideo {
+  margin-right: 20px
+}
+
+.btn {
+  margin-top: 10px
+}

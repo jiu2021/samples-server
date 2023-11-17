@@ -12,10 +12,15 @@
     "url": "https://github.com/mdn/samples-server.git"
   },
   "scripts": {
+    "rtcApp": "nodemon fe/app.js",
+    "signalServer": "nodemon chatserver.js",
     "postinstall": "cp node_modules/webrtc-adapter/out/adapter.js ."
   },
   "dependencies": {
     "webrtc-adapter": "^1.4.0",
     "websocket": "^1.0.34"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
