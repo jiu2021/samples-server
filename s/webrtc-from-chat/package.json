@@ -17,6 +17,9 @@
     "postinstall": "cp node_modules/webrtc-adapter/out/adapter.js ."
   },
   "dependencies": {
+    "koa": "^2.14.2",
+    "koa-route": "^3.2.0",
+    "koa-static": "^5.0.0",
     "webrtc-adapter": "^1.4.0",
     "websocket": "^1.0.34"
   },
