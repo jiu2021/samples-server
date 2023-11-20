@@ -56,7 +56,7 @@ var isCall = true;              // 全局标志用来判断是否是视频通话
 var isSend = false;             // 全局标志用来判断是否是推流端
 var srcVideo = document.querySelector('#fromVideo');
 var toVideo = document.querySelector('#toVideo');
-var hint = 'motion';            // motion表示帧率优先，detail表示分辨率优先
+var hint = "";            // motion表示帧率优先，detail表示分辨率优先
 
 var stream;
 srcVideo.addEventListener('canplay', () => {
@@ -72,8 +72,9 @@ srcVideo.addEventListener('canplay', () => {
   }
   // toVideo.srcObject = stream;
   // stream.getTracks().forEach(
-  //   track => toVideo.srcObject = new MediaStream([track])
+  //   track => iframeVideo.srcObject = new MediaStream([track])
   // );
+  // iframeVideo.srcObject = stream;
 });
 
 // Output logging information to console.
