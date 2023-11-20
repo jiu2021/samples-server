@@ -5,3 +5,4 @@ node_modules/
 .vscode
 .remote-sync.json
 *.mp4
+*.webm

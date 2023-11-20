@@ -52,7 +52,8 @@ var targetUsername = null;      // To store username of other peer
 var myPeerConnection = null;    // RTCPeerConnection
 var transceiver = null;         // RTCRtpTransceiver
 var webcamStream = null;        // MediaStream from webca
-var isCall = true;               // 全局标志用来判断是否是视频通话还是传输视频
+var isCall = true;              // 全局标志用来判断是否是视频通话还是传输视频
+var isSend = false;             // 全局标志用来判断是否是推流端
 var srcVideo = document.querySelector('#fromVideo');
 var toVideo = document.querySelector('#toVideo');
 
@@ -69,6 +70,9 @@ srcVideo.addEventListener('canplay', () => {
     stream = null;
   }
   // toVideo.srcObject = stream;
+  // stream.getTracks().forEach(
+  //   track => toVideo.srcObject = new MediaStream([track])
+  // );
 });
 
 // Output logging information to console.
@@ -334,9 +338,12 @@ function handleTrackEvent(event) {
     console.log('通话接收')
     document.getElementById("received_video").srcObject = event.streams[0];
   } else {
-    console.log('视频接收')
-    toVideo.srcObject = event.streams[0];
-    iframeVideo.srcObject = event.streams[0];
+    if (!isSend) {
+      console.log('视频接收')
+      setVideoTrackContentHints(event.streams[0], 'detail')
+      toVideo.srcObject = event.streams[0];
+      iframeVideo.srcObject = event.streams[0];
+    }
   }
   
   document.getElementById("hangup-button").disabled = false;
@@ -580,6 +587,7 @@ async function invite(evt) {
 }
 
 async function startTran(evt) {
+  isSend = true;
   log("Starting to prepare an invitation");
   if (myPeerConnection) {
     alert("You can't start a call because you already have one open!");
@@ -612,6 +620,7 @@ async function startTran(evt) {
     // Add the tracks from the stream to the RTCPeerConnection
 
     try {
+      setVideoTrackContentHints(stream, 'detail')
       stream.getTracks().forEach(
         transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
       );
@@ -731,7 +740,7 @@ async function handleTranOfferMsg(msg) {
   if (!stream) {
     srcVideo.addEventListener('canplay', () => {
       console.log('canplay')
-      const fps = 60; // 设置为0，则会捕获单个帧。
+      const fps = 0; // 设置为0，则会捕获单个帧。
       if (srcVideo.captureStream) {
         stream = srcVideo.captureStream(fps);
       } else if (srcVideo.mozCaptureStream) {
@@ -743,12 +752,16 @@ async function handleTranOfferMsg(msg) {
       // toVideo.srcObject = stream;
     });
 
-    try {
-      stream.getTracks().forEach(
-        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
-      );
-    } catch(err) {
-      handleGetUserMediaError(err);
+    if (isSend) {
+      setVideoTrackContentHints(stream, 'detail')
+      try {
+        stream.getTracks().forEach(
+          transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
+        );
+        
+      } catch(err) {
+        handleGetUserMediaError(err);
+      } 
     }
   }
 
@@ -854,3 +867,18 @@ iframeDom.onload = function () {
   iframeVideo = iframeDom.contentWindow.getVideo();
   console.log(data, iframeVideo);
 }
+
+
+function setVideoTrackContentHints(stream, hint) {
+  const tracks = stream.getVideoTracks();
+  tracks.forEach(track => {
+   if ('contentHint' in track) {
+   track.contentHint = hint;
+   if (track.contentHint !== hint) {
+    console.warn('Invalid video track contentHint: \'' + hint + '\'');
+   }
+   } else {
+    console.warn('MediaStreamTrack contentHint attribute not support ');
+   }
+  });
+ }
