@@ -14,7 +14,7 @@
 // Get our hostname
 
 var myHostname = window.location.hostname;
-// myHostname = '192.168.1.100' //跨设备局域网中使用，应为信令服务器所在ip，本机测试时可忽略
+myHostname = '192.168.1.101' //跨设备局域网中使用，应为信令服务器所在ip，本机测试时可忽略
 if (!myHostname) {
   myHostname = "localhost";
 }
@@ -56,6 +56,7 @@ var isCall = true;              // 全局标志用来判断是否是视频通话
 var isSend = false;             // 全局标志用来判断是否是推流端
 var srcVideo = document.querySelector('#fromVideo');
 var toVideo = document.querySelector('#toVideo');
+var hint = 'motion';            // motion表示帧率优先，detail表示分辨率优先
 
 var stream;
 srcVideo.addEventListener('canplay', () => {
@@ -340,7 +341,7 @@ function handleTrackEvent(event) {
   } else {
     if (!isSend) {
       console.log('视频接收')
-      setVideoTrackContentHints(event.streams[0], 'detail')
+      setVideoTrackContentHints(event.streams[0], hint)
       toVideo.srcObject = event.streams[0];
       iframeVideo.srcObject = event.streams[0];
     }
@@ -620,7 +621,7 @@ async function startTran(evt) {
     // Add the tracks from the stream to the RTCPeerConnection
 
     try {
-      setVideoTrackContentHints(stream, 'detail')
+      setVideoTrackContentHints(stream, hint)
       stream.getTracks().forEach(
         transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
       );
@@ -753,7 +754,7 @@ async function handleTranOfferMsg(msg) {
     });
 
     if (isSend) {
-      setVideoTrackContentHints(stream, 'detail')
+      setVideoTrackContentHints(stream, hint)
       try {
         stream.getTracks().forEach(
           transceiver = track => myPeerConnection.addTransceiver(track, {streams: [stream]})
