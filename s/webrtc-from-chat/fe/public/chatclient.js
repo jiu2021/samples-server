@@ -14,7 +14,7 @@
 // Get our hostname
 
 var myHostname = window.location.hostname;
-myHostname = '192.168.1.101' //跨设备局域网中使用，应为信令服务器所在ip，本机测试时可忽略
+// myHostname = '192.168.1.101' //跨设备局域网中使用，应为信令服务器所在ip，本机测试时可忽略
 if (!myHostname) {
   myHostname = "localhost";
 }
